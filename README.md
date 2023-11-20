@@ -168,7 +168,7 @@ Output written to file /tmp/slow-log-summary-20231113-204738.html
 ### performance_schema
 
 下面是基于 performance_schema 生成的查询耗时汇总报告：
-
+![GitHub Logo](images/performance_schema.jpg)
 注意，
 
 1. 报告右上角的“生成时间”是中国时区时间，而报告中 SQL 的“第一次出现时间”和“最近一次出现时间”是原样输出，没有进行时区转换，具体是什么时区下的时间取决于实例的 time_zone。
@@ -187,7 +187,7 @@ UPDATE performance_schema.setup_consumers SET ENABLED = 'YES' WHERE NAME='events
 ### 慢日志 + pt-query-digest
 
 下面是基于慢日志 + pt-query-digest 生成的慢查询汇总报告：
-
+![GitHub Logo](images/slowlog.jpg)
 报告中的 Digest 是 Digest Text（规范化语句摘要）对应的哈希值。
 
 如果我们想看某一类 SQL 更详细的统计信息，可通过该类 SQL 的 Digest，去`pt-query-digest`的原始报告中找。
