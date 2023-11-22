@@ -562,7 +562,7 @@ func getSlowLogSummaryFromPerformanceSchema(username string, password string, ho
 	// 检查 MySQL 版本
 	var queryColumn string
 	if IsMySQLVersionGreaterOrEqual(mysqlVersion, "8.0.0") {
-		queryColumn = ",QUERY_SAMPLE_TEXT AS sample_query"
+		queryColumn = ", IFNULL(QUERY_SAMPLE_TEXT,'NULL') AS sample_query"
 		if IsMySQLVersionGreaterOrEqual(mysqlVersion, "8.0.28") {
 			// 查询 performance_schema.setup_consumers 中 'events_statements_cpu' 记录的 enabled 列
 			var eventsStatementsCPUEnabled string
@@ -602,8 +602,8 @@ func getSlowLogSummaryFromPerformanceSchema(username string, password string, ho
         SUM_CREATED_TMP_DISK_TABLES AS tmp_disk_tables,
         SUM_SORT_ROWS AS rows_sorted,
         SUM_SORT_MERGE_PASSES AS sort_merge_passes,
-        DIGEST AS digest,
-        DIGEST_TEXT AS digest_text,
+        IFNULL(DIGEST,'NULL') AS digest,
+        IFNULL(DIGEST_TEXT,'NULL') AS digest_text,
         DATE_FORMAT(FIRST_SEEN, '%%Y-%%m-%%d %%H:%%i:%%s') AS first_seen,
         DATE_FORMAT(LAST_SEEN, '%%Y-%%m-%%d %%H:%%i:%%s') AS last_seen
         %s
@@ -703,6 +703,11 @@ func main() {
 	log.SetFlags(log.Lshortfile)
 	if len(conf.Source) == 0 {
 		log.Fatalf("Error: The --source parameter is required.")
+	}
+	if conf.Source == "perf" {
+		if conf.Since != "" || conf.Until != "" || conf.Yday {
+			log.Fatalf("Error: Parameters 'since', 'until', and 'yday' are not allowed when source is set to 'perf'.")
+		}
 	}
 	if conf.Source == "perf" {
 		if conf.Password == "" {
