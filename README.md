@@ -169,6 +169,8 @@ Output written to file /tmp/slow-log-summary-20231113-204738.html
 
 下面是基于 performance_schema 生成的查询耗时汇总报告：
 
+![MySQL实战](https://images.cnblogs.com/cnblogs_com/ivictor/2359774/o_231120024717_performance_schema.jpg)
+
 注意，
 
 1. 报告右上角的“生成时间”是中国时区时间，而报告中 SQL 的“第一次出现时间”和“最近一次出现时间”是原样输出，没有进行时区转换，具体是什么时区下的时间取决于实例的 time_zone。
@@ -177,16 +179,16 @@ Output written to file /tmp/slow-log-summary-20231113-204738.html
 4. 对于 MySQL 8.0 之前的版本，报告中只会显示 Digest Text（规范化语句摘要），不会显示 Sample SQL（一类 SQL 中一个具体的 SQL 语句）。Sample SQL 是 MySQL 8.0 才开始支持的。
 5. 对于 MySQL 8.0.31 开始的版本，报告中还会显示语句的最大内存使用量。
 6. 对于 MySQL 8.0.28 开始的版本，如果 performance_schema.setup_consumers 中 CPU 相关的配置开启了（默认没有开启），报告中还会显示语句的CPU平均耗时。
-
-```sql
-UPDATE performance_schema.setup_consumers SET ENABLED = 'YES' WHERE NAME='events_statements_cpu';
-```
-
+   ```sql
+   UPDATE performance_schema.setup_consumers SET ENABLED = 'YES' WHERE NAME='events_statements_cpu';
+   ```
 
 
 ### 慢日志 + pt-query-digest
 
 下面是基于慢日志 + pt-query-digest 生成的慢查询汇总报告：
+
+![MySQL实战](https://images.cnblogs.com/cnblogs_com/ivictor/2359774/o_231120024655_slowlog.jpg)
 
 报告中的 Digest 是 Digest Text（规范化语句摘要）对应的哈希值。
 
