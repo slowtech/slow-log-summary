@@ -9,6 +9,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+        "io/ioutil"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/crypto/ssh/terminal"
@@ -154,6 +155,7 @@ const temp = `
                                 <th class="text-center">第一次出现时间</th>
                                 <th class="text-center">最近一次出现时间</th>
                                 <th class="text-center">数据库名</th>
+                                <th class="text-center">DigestPrefix</th>
                                 <th class="text-left">Digest Text</th>
                                 {{with index .slowLogSummary 0}}
                                    {{if .SampleSQL}}
@@ -192,6 +194,7 @@ const temp = `
                                     <td class="text-center">{{ .FirstSeen}}</td>
                                     <td class="text-center">{{ .LastSeen}}</td>
                                     <td class="text-center">{{ .Database}}</td>
+                                    <td class="text-center">{{ .Digest}}</td>
                                     <td class="text-left">{{ .DigestText}}</td>
                                     {{if .SampleSQL}}
                                        <td class="text-left">{{ .SampleSQL}}</td>
@@ -350,7 +353,14 @@ func getSlowLogSummaryByPtQueryDigest(ptQueryDigestCmd []string, slowlogFile str
 	if strings.Contains(string(slowLog), "# No events processed") {
 		log.Println("Warning: No events processed")
 	}
-	lines := strings.Split(string(slowLog), "\n")
+	lines := strings.Split(slowLog, "\n")
+	ptQueryDigestReportPath := fmt.Sprintf("/tmp/pt-query-digest-report-%s.txt", currentTime.Format("20060102-150405"))
+	// Write slowLog content to the file
+	err = ioutil.WriteFile(ptQueryDigestReportPath, []byte(slowLog), 0644)
+	if err != nil {
+		log.Printf("Warning: Failed to write slowLog content to file: %v", err)
+	}
+	fmt.Println(fmt.Sprintf("pt-query-digest report written to file %s", ptQueryDigestReportPath))
 	linesNums := len(lines)
 	timeRangeFlag := false
 	var timeRangeStart string
@@ -583,7 +593,10 @@ func getSlowLogSummaryFromPerformanceSchema(username string, password string, ho
 
 	statementAnalysisSQL = fmt.Sprintf(`
     SELECT
-        IFNULL(SCHEMA_NAME,'') AS db,
+        CASE WHEN SCHEMA_NAME IS NULL AND DIGEST IS NULL THEN 'NULL'
+             WHEN SCHEMA_NAME IS NULL THEN ''
+             ELSE SCHEMA_NAME
+        END AS db,
         IF(SUM_NO_GOOD_INDEX_USED > 0 OR SUM_NO_INDEX_USED > 0, 'Y', 'N') AS full_scan,
         COUNT_STAR AS exec_count,
         SUM_ERRORS AS err_count,
@@ -602,7 +615,10 @@ func getSlowLogSummaryFromPerformanceSchema(username string, password string, ho
         SUM_CREATED_TMP_DISK_TABLES AS tmp_disk_tables,
         SUM_SORT_ROWS AS rows_sorted,
         SUM_SORT_MERGE_PASSES AS sort_merge_passes,
-        IFNULL(DIGEST,'NULL') AS digest,
+        CASE
+            WHEN DIGEST IS NULL THEN 'NULL'
+            ELSE LEFT(DIGEST,10) 
+        END AS digest,
         IFNULL(DIGEST_TEXT,'NULL') AS digest_text,
         DATE_FORMAT(FIRST_SEEN, '%%Y-%%m-%%d %%H:%%i:%%s') AS first_seen,
         DATE_FORMAT(LAST_SEEN, '%%Y-%%m-%%d %%H:%%i:%%s') AS last_seen
