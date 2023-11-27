@@ -169,7 +169,7 @@ Output written to file /tmp/slow-log-summary-20231113-204738.html
 
 下面是基于 performance_schema 生成的查询耗时汇总报告：
 
-![MySQL实战](https://images.cnblogs.com/cnblogs_com/ivictor/2359774/o_231120024717_performance_schema.jpg)
+![MySQL实战](https://images.cnblogs.com/cnblogs_com/ivictor/2359774/o_8188c401.jpg)
 
 注意，
 
@@ -182,18 +182,20 @@ Output written to file /tmp/slow-log-summary-20231113-204738.html
    ```sql
    UPDATE performance_schema.setup_consumers SET ENABLED = 'YES' WHERE NAME='events_statements_cpu';
    ```
+7. DigestPrefix 是 Digest 的前缀，我们可以基于该值从 performance_schema.events_statements_summary_by_digest 获取该类 SQL 更详细的统计信息。
 
 
 ### 慢日志 + pt-query-digest
 
 下面是基于慢日志 + pt-query-digest 生成的慢查询汇总报告：
 
-![MySQL实战](https://images.cnblogs.com/cnblogs_com/ivictor/2359774/o_231120024655_slowlog.jpg)
+![MySQL实战](https://images.cnblogs.com/cnblogs_com/ivictor/2359774/o_2f8af7c9.jpg)
 
 报告中的 Digest 是 Digest Text（规范化语句摘要）对应的哈希值。
 
 如果我们想看某一类 SQL 更详细的统计信息，可通过该类 SQL 的 Digest，去`pt-query-digest`的原始报告中找。
 
+注意，因为 MySQL 5.6，5.7 的`pt-query-digest`的原始报告中不会输出示例 SQL 的数据库名，所以，对于 MySQL 5.6，5.7 下的慢查询汇总报告，数据库名这一列会为空。
 
 
 # 实现思路
