@@ -9,11 +9,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
-        "io/ioutil"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/crypto/ssh/terminal"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"math"
 	"os"
@@ -170,6 +170,7 @@ const temp = `
                                 <th class="text-center">平均耗时</th>
                                 <th class="text-center">平均扫描行数</th>
                                 <th class="text-center">平均发送行数</th>
+                                <th class="text-center">数据库名</th>
                                 <th class="text-center">Digest</th>
                                 <th class="text-left">Sample SQL</th>
                             {{end}}
@@ -211,6 +212,7 @@ const temp = `
 				    <td class="text-center">{{ .AvgExecTime}}</td>
 				    <td class="text-center">{{ .RowsExamine}}</td>
                                     <td class="text-center">{{ .RowsSent}}</td>
+                                    <td class="text-center">{{ .Database}}</td>
                                     <td class="text-center">{{ .Digest}}</td>
                                     <td class="text-left">{{range .SampleSQL}}{{.}};<br>{{end}}</td>
                                 </tr>
@@ -415,6 +417,10 @@ func getSlowLogSummaryByPtQueryDigest(ptQueryDigestCmd []string, slowlogFile str
 			re, _ := regexp.Compile(" +")
 			rowToArray := re.Split(line, -1)
 			sampleSQLInfo[rowToArray[2]] = rowToArray[7]
+		} else if sampleFlag && (strings.HasPrefix(line, "# Databases")) {
+			re, _ := regexp.Compile(" +")
+			rowToArray := re.Split(line, 3)
+			sampleSQLInfo["Databases"] = rowToArray[2]
 		} else if sampleFlag && (!strings.HasPrefix(line, "#")) && len(line) != 0 {
 			sampleSQL = append(sampleSQL, line)
 		} else if sampleFlag && (len(line) == 0 || k == (linesNums-1)) {
@@ -432,7 +438,7 @@ func getSlowLogSummaryByPtQueryDigest(ptQueryDigestCmd []string, slowlogFile str
 			if strings.Contains(key, miniQueryID) {
 				v[8] = sampleSQLs[key]["sampleSQL"]
 				v[2] = key
-				v = append(v, sampleSQLs[key]["Exec"], sampleSQLs[key]["Lock"], sampleSQLs[key]["sent"], sampleSQLs[key]["examine"])
+				v = append(v, sampleSQLs[key]["Exec"], sampleSQLs[key]["Lock"], sampleSQLs[key]["sent"], sampleSQLs[key]["examine"], sampleSQLs[key]["Databases"])
 				slowLogProfile[i] = v
 				break
 			}
@@ -448,6 +454,7 @@ func getSlowLogSummaryByPtQueryDigest(ptQueryDigestCmd []string, slowlogFile str
 		AvgLockTime   string
 		RowsSent      string
 		RowsExamine   string
+		Database      string
 		Digest        string
 		SampleSQL     []string
 	}
@@ -456,7 +463,7 @@ func getSlowLogSummaryByPtQueryDigest(ptQueryDigestCmd []string, slowlogFile str
 	for _, value := range slowLogProfile {
 		// 之所以要将字符串分隔为切片，主要是为了模板渲染时生成换行符<br>
 		sampleSQLSplitResult := strings.Split(value[8], "\\G")
-		slowlogrecord := slowlog{value[1], value[3], value[4], value[5], value[9], value[10], value[11], value[12], value[2], sampleSQLSplitResult}
+		slowlogrecord := slowlog{value[1], value[3], value[4], value[5], value[9], value[10], value[11], value[12], value[13], value[2], sampleSQLSplitResult}
 		slowlogs = append(slowlogs, slowlogrecord)
 	}
 	return map[string]interface{}{"slowLogSource": slowlogFile, "slowLogSummary": slowlogs, "now": now, "timeRangeStart": timeRangeStart, "timeRangeEnd": timeRangeEnd}
