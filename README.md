@@ -195,7 +195,7 @@ Output written to file /tmp/slow-log-summary-20231113-204738.html
 
 如果我们想看某一类 SQL 更详细的统计信息，可通过该类 SQL 的 Digest，去`pt-query-digest`的原始报告中找。
 
-注意，因为 MySQL 5.6，5.7 的`pt-query-digest`的原始报告中不会输出示例 SQL 的数据库名，所以，对于 MySQL 5.6，5.7 下的慢查询汇总报告，数据库名这一列会为空。
+注意，因为 MySQL 5.6，5.7 的`pt-query-digest`的原始报告中不会输出示例 SQL 的数据库名，所以，如果分析的是 MySQL 5.6，5.7 当慢日志，数据库名这一列会为空。
 
 
 # 实现思路
